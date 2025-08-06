@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>DJ Chitra Official - Booking</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .spinner {
+      border: 4px solid rgba(255, 255, 255, 0.2);
+      border-top: 4px solid #fff;
+      border-radius: 50%;
+      width: 30px;
+      height: 30px;
+      animation: spin 1s linear infinite;
+      margin: auto;
+    }
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+  </style>
+</head>
+<body class="bg-gradient-to-r from-black via-gray-900 to-black text-white font-sans">
+
+  <!-- MUSIC ON LOAD -->
+  <audio id="bgMusic" autoplay loop>
+    <source src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" type="audio/mp3" />
+    Your browser does not support the audio element.
+  </audio>
+
+  <!-- Hero Section -->
+  <section class="min-h-screen flex flex-col items-center justify-center text-center px-4">
+    <h1 class="text-5xl md:text-6xl font-extrabold bg-gradient-to-r from-pink-500 to-purple-500 bg-clip-text text-transparent">
+      DJ Chitra Official
+    </h1>
+    <p class="mt-4 text-xl md:text-2xl text-gray-300">"Make Your Events Loud & Lit!"</p>
+    <p class="mt-2 text-sm text-gray-400">Book DJ for Wedding, Jagran, Parties & More</p>
+  </section>
+
+  <!-- Booking Form -->
+  <section class="bg-gray-900 py-10 px-4 md:px-20 rounded-t-3xl">
+    <h2 class="text-3xl font-bold text-center text-pink-400 mb-8">📋 Book Your Event</h2>
+    
+    <form id="bookingForm" class="grid md:grid-cols-2 gap-6">
+      <input id="name" type="text" placeholder="Your Name" required class="p-3 rounded bg-gray-800 text-white" />
+      <input id="phone" type="tel" placeholder="Phone Number" required class="p-3 rounded bg-gray-800 text-white" />
+      <input id="date" type="date" required class="p-3 rounded bg-gray-800 text-white" />
+      <input id="event" type="text" placeholder="Event Type (Wedding, Party...)" required class="p-3 rounded bg-gray-800 text-white" />
+      <textarea id="location" placeholder="Event Location / Address" required class="p-3 rounded bg-gray-800 text-white md:col-span-2"></textarea>
+
+      <!-- Submit Button + Spinner -->
+      <div class="md:col-span-2 text-center mt-6">
+        <button id="submitBtn" type="submit" class="bg-green-600 hover:bg-green-700 text-white px-8 py-3 rounded-full text-lg font-semibold">
+          📲 Book via WhatsApp
+        </button>
+        <div id="spinner" class="spinner mt-4 hidden"></div>
+        <div id="successMsg" class="hidden text-green-400 text-center mt-4 text-lg font-semibold">
+          ✅ Booking Submitted Successfully!
+        </div>
+      </div>
+
+      <!-- WhatsApp Message Preview -->
+      <div id="previewBox" class="hidden mt-6 md:col-span-2 bg-gray-800 p-4 rounded shadow">
+        <p class="text-green-300 mb-2 font-semibold">📋 WhatsApp Message Preview:</p>
+        <pre id="previewMessage" class="text-sm bg-black text-white p-3 rounded whitespace-pre-wrap"></pre>
+        <button id="sendBtn" class="mt-3 bg-green-600 hover:bg-green-700 px-6 py-2 rounded-full font-bold text-white">
+          🚀 Send via WhatsApp
+        </button>
+      </div>
+    </form>
+  </section>
+
+  <!-- Firebase & Logic -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyAbPE0yGBSWiRybtQzH3bQxwLJ5bFQSBoA",
+      authDomain: "dj-chitra-booking.firebaseapp.com",
+      projectId: "dj-chitra-booking",
+      storageBucket: "dj-chitra-booking.firebasestorage.app",
+      messagingSenderId: "830477175612",
+      appId: "1:830477175612:web:8887209f1c4329e18cac39",
+      measurementId: "G-VEPVNXLZVW"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    // Fix for music autoplay
+    window.addEventListener('click', () => {
+      const audio = document.getElementById("bgMusic");
+      audio.play().catch(e => {});
+    }, { once: true });
+
+    // Form submit
+    document.getElementById("bookingForm").addEventListener("submit", async function (e) {
+      e.preventDefault();
+
+      const name = document.getElementById("name").value;
+      const phone = document.getElementById("phone").value;
+      const date = document.getElementById("date").value;
+      const event = document.getElementById("event").value;
+      const location = document.getElementById("location").value;
+
+      document.getElementById("spinner").classList.remove("hidden");
+      document.getElementById("submitBtn").disabled = true;
+
+      try {
+        // Store in Firestore
+        await addDoc(collection(db, "bookings"), {
+          name,
+          phone,
+          date,
+          event,
+          location,
+          timestamp: new Date()
+        });
+
+        // Message
+        const message = `Hi DJ Chitra, I want to book you for a ${event}.\nName: ${name}\nPhone: ${phone}\nDate: ${date}\nLocation: ${location}`;
+
+        // Show success + preview
+        document.getElementById("spinner").classList.add("hidden");
+        document.getElementById("successMsg").classList.remove("hidden");
+        document.getElementById("previewBox").classList.remove("hidden");
+        document.getElementById("previewMessage").textContent = message;
+
+        document.getElementById("bookingForm").reset();
+        document.getElementById("submitBtn").disabled = false;
+
+        // WhatsApp send button
+        document.getElementById("sendBtn").onclick = () => {
+          const url = `https://wa.me/917667719010?text=${encodeURIComponent(message)}`;
+          window.open(url, '_blank');
+        };
+
+      } catch (error) {
+        alert("❌ Booking failed. Please try again.");
+        document.getElementById("spinner").classList.add("hidden");
+        document.getElementById("submitBtn").disabled = false;
+        console.error(error);
+      }
+    });
+  </script>
+</body>
+</html>
